@@ -10,6 +10,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiBody, ApiTags } from '@nestjs/swagger';
 import { CreatePlantDto } from './dto/create-plant.dto';
 import { PlantsService } from './plants.service';
+import { ParseMultipartJsonPipe } from 'src/common/pipes/parse-multipart-json.pipe';
 
 @ApiTags('plants')
 @Controller('plants')
@@ -61,34 +62,12 @@ export class PlantsController {
     },
   })
   @UseInterceptors(FileInterceptor('attachments'))
-  async createPlant(@Body() payload: any, @UploadedFile() attachments: any) {
-    const parsed = { ...payload };
-
-    if (parsed.created_by && typeof parsed.created_by === 'string') {
-      try {
-        parsed.created_by = JSON.parse(parsed.created_by);
-      } catch (e) {
-        // leave as-is if not valid JSON
-      }
-    }
-
-    if (parsed.location && typeof parsed.location === 'string') {
-      try {
-        parsed.location = JSON.parse(parsed.location);
-      } catch (e) {
-        // leave as-is
-      }
-    }
-
-    if (parsed.metadata && typeof parsed.metadata === 'string') {
-      try {
-        parsed.metadata = JSON.parse(parsed.metadata);
-      } catch (e) {
-        // leave as-is
-      }
-    }
-
-    const response = await this.plantsService.createPlant(parsed, attachments);
+  async createPlant(
+    @Body(new ParseMultipartJsonPipe(['created_by', 'location', 'metadata']))
+    payload: CreatePlantDto,
+    @UploadedFile() attachments: any,
+  ) {
+    const response = await this.plantsService.createPlant(payload, attachments);
     return response;
   }
 

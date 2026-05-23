@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreatePlantDto } from './dto/create-plant.dto';
 import { v7 as uuidv7 } from 'uuid';
 import { UsersService } from '../users/users.service';
 import { SpeciesService } from 'src/species/species.service';
@@ -13,7 +14,7 @@ export class PlantsService {
     private readonly hashService: HashService,
     private readonly plantsRepository: PlantsRepository,
   ) {}
-  async createPlant(payload: any, attachments: any) {
+  async createPlant(payload: CreatePlantDto, attachments: any) {
     //todo: validate payload.created_by.user_id exists in users service
     const user = await this.usersService.getUserById(
       payload.created_by.user_id,
