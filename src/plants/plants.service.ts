@@ -4,13 +4,15 @@ import { v7 as uuidv7 } from 'uuid';
 import { UsersService } from '../users/users.service';
 import { SpeciesService } from 'src/species/species.service';
 import { HashService } from 'src/hash/hash.service';
+import { PlantsRepository } from 'src/repository/plants.repository';
 
 @Injectable()
 export class PlantsService {
   constructor(
     private readonly usersService: UsersService,
     private readonly speciesService: SpeciesService,
-    private readonly hashService: HashService
+    private readonly hashService: HashService,
+    private readonly plantsRepository: PlantsRepository,
   ) {}
   async createPlant(payload: CreatePlantDto, attachments: any) {
     //todo: validate payload.created_by.user_id exists in users service
@@ -43,7 +45,7 @@ export class PlantsService {
       plant_id,
       nick_name: payload.nick_name,
       specie_id: payload.specie_id,
-      created_by: payload.created_by.user_id,
+      created_by: payload.created_by,
       location: payload.location,
       metadata: payload.metadata,
       attachments: {
@@ -58,6 +60,10 @@ export class PlantsService {
     const plant_hash = this.hashService.generateObjectHash(plantData);
 
     //todo: persist plant data in database with reference to file URL and hash on plant collection (MONGODB)
+    await this.plantsRepository.create({
+      ...plantData,
+      plant_hash,
+    });
 
     //todo: serialize event data with plant id, event type (creation), timestamp and metadata
     //todo: persist event data in database with reference to plant id on events collection (MONGODB)

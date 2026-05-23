@@ -9,10 +9,14 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiBody, ApiTags } from '@nestjs/swagger';
 import { CreatePlantDto } from './dto/create-plant.dto';
+import { PlantsService } from './plants.service';
+import { ParseMultipartJsonPipe } from 'src/common/pipes/parse-multipart-json.pipe';
 
 @ApiTags('plants')
 @Controller('plants')
 export class PlantsController {
+  constructor(private readonly plantsService: PlantsService) {}
+
   @Post()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -58,22 +62,13 @@ export class PlantsController {
     },
   })
   @UseInterceptors(FileInterceptor('attachments'))
-  createPlant(
-    @Body() payload: CreatePlantDto,
+  async createPlant(
+    @Body(new ParseMultipartJsonPipe(['created_by', 'location', 'metadata']))
+    payload: CreatePlantDto,
     @UploadedFile() attachments: any,
   ) {
-    // TODO: implement creation logic (save file, persist payload)
-    return {
-      message: 'Plant created successfully',
-      payload,
-      file: attachments
-        ? {
-            originalname: attachments.originalname,
-            mimetype: attachments.mimetype,
-            size: attachments.size,
-          }
-        : null,
-    };
+    const response = await this.plantsService.createPlant(payload, attachments);
+    return response;
   }
 
   @Get()
