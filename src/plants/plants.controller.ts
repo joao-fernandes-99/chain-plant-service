@@ -9,10 +9,13 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiBody, ApiTags } from '@nestjs/swagger';
 import { CreatePlantDto } from './dto/create-plant.dto';
+import { PlantsService } from './plants.service';
 
 @ApiTags('plants')
 @Controller('plants')
 export class PlantsController {
+  constructor(private readonly plantsService: PlantsService) {}
+
   @Post()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -58,22 +61,35 @@ export class PlantsController {
     },
   })
   @UseInterceptors(FileInterceptor('attachments'))
-  createPlant(
-    @Body() payload: CreatePlantDto,
-    @UploadedFile() attachments: any,
-  ) {
-    // TODO: implement creation logic (save file, persist payload)
-    return {
-      message: 'Plant created successfully',
-      payload,
-      file: attachments
-        ? {
-            originalname: attachments.originalname,
-            mimetype: attachments.mimetype,
-            size: attachments.size,
-          }
-        : null,
-    };
+  async createPlant(@Body() payload: any, @UploadedFile() attachments: any) {
+    const parsed = { ...payload };
+
+    if (parsed.created_by && typeof parsed.created_by === 'string') {
+      try {
+        parsed.created_by = JSON.parse(parsed.created_by);
+      } catch (e) {
+        // leave as-is if not valid JSON
+      }
+    }
+
+    if (parsed.location && typeof parsed.location === 'string') {
+      try {
+        parsed.location = JSON.parse(parsed.location);
+      } catch (e) {
+        // leave as-is
+      }
+    }
+
+    if (parsed.metadata && typeof parsed.metadata === 'string') {
+      try {
+        parsed.metadata = JSON.parse(parsed.metadata);
+      } catch (e) {
+        // leave as-is
+      }
+    }
+
+    const response = await this.plantsService.createPlant(parsed, attachments);
+    return response;
   }
 
   @Get()
